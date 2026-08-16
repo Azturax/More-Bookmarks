@@ -13,7 +13,7 @@
 	"morebookmarks.config.title": "More Bookmarks",
 	"morebookmarks.config.category.general": "General",
 	"morebookmarks.config.show_search_button": "Search-bar button",
-	"morebookmarks.config.show_search_button.tooltip": "Show the bookmark button next to EMI's search field.",
+	"morebookmarks.config.show_search_button.tooltip": "Show the bookmark button next to the recipe viewer's search field.",
 	"morebookmarks.config.show_left_panel": "Left bookmark panel",
 	"morebookmarks.config.show_left_panel.tooltip": "Show the saved-search list on the left of the item browser.",
 	"morebookmarks.config.allow_any_search": "Allow any search",

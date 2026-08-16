@@ -1,13 +1,15 @@
 {
-	"required": true,
+	"required": false,
 	"minVersion": "0.8",
 	"package": "dev.morebookmarks.mixin",
+	"plugin": "dev.morebookmarks.mixin.MoreBookmarksMixinPlugin",
 	"compatibilityLevel": "JAVA_21",
 	"refmap": "morebookmarks.refmap.json",
 	"client": [
 		"EmiScreenBaseInvoker",
 		"EmiScreenBaseMixin",
-		"EmiScreenManagerMixin"
+		"EmiScreenManagerMixin",
+		"JeiIngredientListOverlayAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

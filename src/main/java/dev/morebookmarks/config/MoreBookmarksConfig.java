@@ -14,7 +14,7 @@ import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * Client options persisted in {@code config/morebookmarks.json}.
- * Bookmark strings stay in {@code config/emi-mod-bookmarks.json}.
+ * Bookmark strings stay in {@code config/morebookmarks-searches.json}.
  */
 public final class MoreBookmarksConfig {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();

@@ -1,139 +1,69 @@
 # Adapting search bookmarks to JEI, REI, and NeoForge
 
-EMI is implemented in this repo. The same feature maps cleanly onto JEI and REI
-because all three expose a search string and a bookmark / favorite overlay.
+EMI, JEI, and REI are all implemented. The same saved-search list is shared:
 
-## Shared pieces (keep as-is)
+- File: `config/morebookmarks-searches.json`
+- Shape: `{ "modBookmarks": ["@azscompanions", "iron", ...] }`
+- Legacy `config/emi-mod-bookmarks.json` is migrated once if the shared file is missing
 
-Reuse these classes unchanged:
+`dev.morebookmarks.bookmark.ModBookmarkManager` is unchanged aside from that shared-file init.
 
-- `dev.morebookmarks.bookmark.ModBookmarkManager`
-- The JSON shape `{ "modBookmarks": ["@azscompanions", "iron", ...] }`
-
-Swap only the config file name (`jei-mod-bookmarks.json` / `rei-mod-bookmarks.json`)
-and the UI glue.
+EMI, JEI, and REI are **optional** soft-depends. Mixin plugin `MoreBookmarksMixinPlugin` applies only the mixins for viewers that are loaded. With none of the three present, the mod no-ops.
 
 ---
 
-## JEI 1.21.1 (Forge / NeoForge)
+## JEI 1.21.1 (Fabric / NeoForge) — shipped
 
-JEI does not have a public “add sidebar section” API. Hook the search field and
-the bookmark overlay with a plugin plus a small mixin.
+Compile against `mezz.jei:jei-1.21.1-fabric` / `jei-1.21.1-neoforge` **19.21.2.313**
+from `https://maven.blamejared.com/`. Soft-depend `jei`.
 
-### Plugin
-
-```java
-@JeiPlugin
-public class MoreBookmarksJeiPlugin implements IModPlugin {
-    @Override
-    public ResourceLocation getPluginUid() {
-        return ResourceLocation.fromNamespaceAndPath("morebookmarks", "jei");
-    }
-
-    @Override
-    public void onRuntimeAvailable(IJeiRuntime runtime) {
-        JeiSearchBridge.setRuntime(runtime);
-    }
-}
-```
-
-### Search
-
-| Need | JEI API |
+| Need | What shipped |
 | --- | --- |
-| Read search | `runtime.getIngredientFilter().getFilterText()` |
-| Write search | `runtime.getIngredientFilter().setFilterText("@mekanism")` |
-| Focus search | mixin or accessor on `GuiTextFieldFilter` / `IngredientFilter` |
+| Plugin | `@JeiPlugin` `MoreBookmarksJeiPlugin` + Fabric `jei_mod_plugin` entrypoint |
+| Read/write search | `JeiSearchBridge` → `IIngredientFilter.getFilterText()` / `setFilterText()` |
+| Focus search | NeoForge: `GuiTextFieldFilter.setFocused(true)` via accessor. Fabric: `setFilterText` only (Yarn cannot compile against JEI’s official-mapped impl jar) |
+| Search-bar button | Screen events (Fabric `ScreenEvents` / NeoForge `ScreenEvent`). NeoForge parks it on the real search field; Fabric estimates from `IGuiProperties` |
+| Left panel | Custom list on the left; registered as `IGlobalGuiHandler` extra areas so JEI yields space |
+| Terminals | Uses JEI’s own overlay; no extra screen-bounds work |
 
-`@modid` is already a JEI prefix (`IIngredientFilter` / `FilterTextManager`).
+Internals used on NeoForge: `mezz.jei.gui.overlay.IngredientListOverlay.searchField` (accessor mixin).
+Fabric compiles against `jei-1.21.1-common-api-intermediary` only — the official-mapped full JEI jar
+duplicates Mojmap types (`EditBox`, `ResourceLocation`) onto a Yarn classpath.
+Public API has no `IIngredientListOverlay.getBounds()` on 19.21.x.
 
-### Search-bar button
+### Leftover limitations
 
-JEI renders the search box in `mezz.jei.gui.overlay.IngredientListOverlay`
-(internal). Mixin `updateBounds` / `drawScreen` / `handleMouseClicked` the same
-way this repo mixins `EmiScreenManager`.
-
-Alternative without mixins: `IGuiHandler` + a `ScreenEvent` overlay button
-positioned from `IIngredientListOverlay.getBounds()`.
-
-### Bookmark panel
-
-JEI’s left bookmark overlay is `mezz.jei.gui.overlay.bookmarks.BookmarkOverlay`.
-
-Options:
-
-1. **Mixin** `BookmarkOverlay.drawScreen` and append a text section under the
-   item grid (closest to this EMI implementation).
-2. **Custom `IIngredient`** entries added through JEI’s bookmark list — worse UX
-   because they render as item slots, not `@mod` labels.
-
-There is no public `IBookmarkOverlay.addSection` API as of JEI 19.x.
-
-### Key classes
-
-- `mezz.jei.api.runtime.IJeiRuntime`
-- `mezz.jei.api.runtime.IIngredientFilter`
-- `mezz.jei.api.runtime.IIngredientListOverlay`
-- `mezz.jei.api.runtime.IBookmarkOverlay`
-- `mezz.jei.gui.overlay.IngredientListOverlay` (mixin target)
-- `mezz.jei.gui.overlay.bookmarks.BookmarkOverlay` (mixin target)
-- `mezz.jei.gui.input.GuiTextFieldFilter` (search widget)
+- No public “add sidebar section” API; the left list is our widget, not a JEI bookmark-grid section.
+- Fabric JEI button is placed from `IGuiProperties` (left of the ingredient list, near the bottom), not the exact `GuiTextFieldFilter` box. Centered search bar is not tracked on Fabric.
+- Fabric JEI apply sets filter text but does not programmatically focus the search widget.
+- JEI bookmark item grid and our text list can sit in the same left strip; extra areas shrink JEI’s grid.
+- `runClient` does not put JEI on the runtime classpath (EMI is the default dev viewer).
 
 ---
 
-## REI 1.21.1 (Fabric / NeoForge)
+## REI 1.21.1 (Fabric / NeoForge) — shipped
 
-REI is the friendliest of the three: favorites are an extension API.
+Compile against `me.shedaniel:RoughlyEnoughItems-fabric` / `RoughlyEnoughItems-neoforge` **16.0.799**
+from `https://maven.shedaniel.me/`. Soft-depend `roughlyenoughitems`.
 
-### Custom favorite type
+| Need | What shipped |
+| --- | --- |
+| Plugin | `MoreBookmarksReiClientPlugin` (`rei_client` on Fabric, `@REIPluginClient` on NeoForge) |
+| Read/write/focus search | `ReiSearchBridge` → `REIRuntime.getSearchTextField()` |
+| Search-bar button + menu + left list | Same HUD as JEI, placed from the search field’s `WidgetWithBounds` (or overlay bounds) |
+| Favorites type | `SearchBookmarkFavoriteEntry` / `FavoriteEntryType`; click applies the query |
+| Exclusion | `ExclusionZones` so REI’s lists do not cover our widgets |
+| Terminals | Uses REI’s own overlay |
 
-Register a `FavoriteEntryType` whose entries store the `@mod` query string.
-They then appear in REI’s existing favorites panel with your renderer
-(`@` prefix, tooltip = full query). Click calls:
+### Leftover limitations
 
-```java
-REIRuntime.getInstance().getSearchTextField().setText(query);
-REIRuntime.getInstance().getSearchTextField().setFocused(true);
-```
-
-```java
-public class ModBookmarkFavoriteEntry extends FavoriteEntry {
-    private final String query;
-
-    @Override
-    public void doAction(int button) {
-        REIRuntime.getInstance().getSearchTextField().setText(query);
-    }
-}
-```
-
-Register with `FavoriteEntryType.registry().register(id, serializer)`.
-
-### Search-bar button
-
-REI’s search field is `me.shedaniel.rei.api.client.gui.widgets.TextField`
-from `REIRuntime.getInstance().getSearchTextField()`.
-
-Add a widget via `OverlayRenderer` / `ScreenRegistry.registerDecider`, or mixin
-`me.shedaniel.rei.impl.client.gui.widget.EntryWidget` / the overlay search row
-(`DefaultDisplayChooserWidget` / `OverlaySearchField` in REI internals).
-
-### Key classes
-
-- `me.shedaniel.rei.api.client.REIRuntime`
-- `me.shedaniel.rei.api.client.favorites.FavoriteEntry`
-- `me.shedaniel.rei.api.client.favorites.FavoriteEntryType`
-- `me.shedaniel.rei.api.client.favorites.FavoriteMenuEntry`
-- `me.shedaniel.rei.api.client.gui.widgets.TextField`
-- `me.shedaniel.rei.api.client.registry.screen.OverlayRenderer`
-- `me.shedaniel.rei.impl.client.gui.widget.search.OverlaySearchField` (mixin if needed)
-
-REI already treats `@` as a namespace / mod filter in its default search
-syntax, so applying the bookmarked string is enough.
+- Favorite-type section is populated at REI plugin reload from the current list; later add/remove in our HUD does not rewrite REI’s favorites picker until a reload.
+- If the search field is not a `WidgetWithBounds`, the button uses the overlay rectangle instead of the exact text box.
+- `runClient` does not put REI on the runtime classpath (EMI is the default dev viewer).
 
 ---
 
-## NeoForge port of this EMI addon
+## NeoForge port of the EMI addon
 
 **Implemented** in `neoforge/` (ModDevGradle + official Mojmap). Build with
 `gradlew.bat -p neoforge build`. The playable jar is
@@ -143,38 +73,18 @@ EMI’s own classes (`dev.emi.emi.*`) are **not remapped**. Mixin targets on
 `EmiScreenManager` are the same; Minecraft type names in those mixins use
 Mojmap (`Screen`, `GuiGraphics`, `AbstractContainerScreen`).
 
-Changes:
+EMI is optional (`type = "optional"` in `neoforge.mods.toml`). The mixin plugin
+skips EMI mixins when EMI is absent.
 
-1. Dependency: `dev.emi:emi-neoforge:${emi_version}` from TerraformersMC Maven.
-2. Annotate the plugin with `@dev.emi.emi.api.EmiEntrypoint` instead of the
-   Fabric `emi` entrypoint.
-3. Client init: `FMLClientSetupEvent` (or a `@Mod` constructor on the physical
-   client) calling `ModBookmarkManager.init(FMLPaths.CONFIGDIR.get().resolve("emi-mod-bookmarks.json"))`.
-4. `META-INF/neoforge.mods.toml`:
+---
 
-```toml
-modLoader = "javafml"
-loaderVersion = "[4,)"
-license = "MIT"
+## Shared pieces
 
-[[mods]]
-modId = "morebookmarks"
-version = "${version}"
-displayName = "More Bookmarks"
-description = '''Save EMI searches as bookmarks.'''
+Reuse unchanged:
 
-[[dependencies.morebookmarks]]
-modId = "neoforge"
-type = "required"
-versionRange = "[21.1,)"
-side = "CLIENT"
+- `dev.morebookmarks.bookmark.ModBookmarkManager` (plus `initShared`)
+- JSON key `modBookmarks`
 
-[[dependencies.morebookmarks]]
-modId = "emi"
-type = "required"
-versionRange = "[1.1.18,)"
-side = "CLIENT"
-```
-
-5. Mixin config is identical; list it under `[[mixins]]` in the NeoForge mods
-   toml (or `morebookmarks.mixins.json` next to the classes).
+JEI/REI UI lives in `dev.morebookmarks.ui` (`BookmarkHud`, `BookmarkButton`,
+`BookmarkMenu`, `BookmarkPanel`) so the two viewers share chrome. EMI still uses
+its original `dev.morebookmarks.emi.*` widgets so that path stays untouched.

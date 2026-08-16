@@ -22,6 +22,18 @@ repositories {
 		name = "Shedaniel"
 		url = "https://maven.shedaniel.me/"
 	}
+	maven {
+		name = "BlameJared"
+		url = "https://maven.blamejared.com/"
+	}
+	maven {
+		name = "ModMaven"
+		url = "https://modmaven.dev/"
+	}
+	maven {
+		name = "Architectury"
+		url = "https://maven.architectury.dev/"
+	}
 }
 
 neoForge {
@@ -51,8 +63,13 @@ configurations {
 }
 
 dependencies {
-	// Full EMI jar: mixins target internals (EmiScreenManager), not just the API classifier.
-	implementation "dev.emi:emi-neoforge:${emi_version}"
+	// Full EMI jar: mixins target internals (EmiScreenManager). Optional at runtime.
+	compileOnly "dev.emi:emi-neoforge:${emi_version}"
+	localRuntime "dev.emi:emi-neoforge:${emi_version}"
+
+	compileOnly "mezz.jei:jei-1.21.1-neoforge:${jei_version}"
+	compileOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
+
 	implementation "me.shedaniel.cloth:cloth-config-neoforge:${cloth_config_version}"
 }
 
@@ -68,12 +85,22 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 		mod_version            : mod_version,
 		mod_authors            : mod_authors,
 		mod_description        : mod_description,
-		emi_version            : emi_version
+		emi_version            : emi_version,
+		jei_version            : jei_version,
+		rei_version            : rei_version
 	]
 	inputs.properties replaceProperties
 	expand replaceProperties
 	from "src/main/templates"
 	into "build/generated/sources/modMetadata"
+
+	doLast {
+		def toml = file("build/generated/sources/modMetadata/META-INF/neoforge.mods.toml").text
+		def emiBlock = (toml =~ /(?s)\[\[dependencies\.${mod_id}\]\]\s*modId = "emi".*?(?=\[\[|\z)/)
+		if (emiBlock.find() && !(emiBlock.group().contains('type = "optional"'))) {
+			throw new GradleException("neoforge.mods.toml still requires EMI — set type = \"optional\"")
+		}
+	}
 }
 
 sourceSets.main.resources.srcDir generateModMetadata

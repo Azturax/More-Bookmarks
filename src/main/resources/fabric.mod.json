@@ -3,7 +3,7 @@
 	"id": "morebookmarks",
 	"version": "${version}",
 	"name": "More Bookmarks",
-	"description": "Save any EMI search as a bookmark. Click one to filter the item index instantly.",
+	"description": "Save any EMI, JEI, or REI search as a bookmark. Click one to filter the item index instantly.",
 	"authors": [
 		"More Bookmarks"
 	],
@@ -19,6 +19,12 @@
 		"emi": [
 			"dev.morebookmarks.emi.MoreBookmarksEmiPlugin"
 		],
+		"jei_mod_plugin": [
+			"dev.morebookmarks.jei.MoreBookmarksJeiPlugin"
+		],
+		"rei_client": [
+			"dev.morebookmarks.rei.MoreBookmarksReiClientPlugin"
+		],
 		"modmenu": [
 			"dev.morebookmarks.config.MoreBookmarksModMenu"
 		]
@@ -30,10 +36,12 @@
 		"fabricloader": ">=0.16.0",
 		"minecraft": "~1.21.1",
 		"java": ">=21",
-		"fabric-api": "*",
-		"emi": ">=1.1.18"
+		"fabric-api": "*"
 	},
 	"recommends": {
+		"emi": ">=1.1.18",
+		"jei": "*",
+		"roughlyenoughitems": "*",
 		"modmenu": "*",
 		"cloth-config": "*"
 	}

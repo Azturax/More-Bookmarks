@@ -12,20 +12,26 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 /**
  * Client entrypoint. Loads options and persisted search bookmarks at startup.
- * All in-game UI is driven by EMI mixins + {@link dev.morebookmarks.emi.ModBookmarkOverlay}.
+ * Viewer UI is attached only when EMI, JEI, and/or REI is present.
  */
 @Mod(value = MoreBookmarks.MOD_ID, dist = Dist.CLIENT)
 public class MoreBookmarksNeoForge {
 	public MoreBookmarksNeoForge(ModContainer container) {
 		MoreBookmarksConfig.init(FMLPaths.CONFIGDIR.get().resolve("morebookmarks.json"));
-		ModBookmarkManager.init(FMLPaths.CONFIGDIR.get().resolve("emi-mod-bookmarks.json"));
+		ModBookmarkManager.initShared(FMLPaths.CONFIGDIR.get());
 		MoreBookmarks.LOGGER.info("Loaded {} search bookmark(s) from {}",
 				ModBookmarkManager.getBookmarks().size(),
-				FMLPaths.CONFIGDIR.get().resolve("emi-mod-bookmarks.json"));
+				FMLPaths.CONFIGDIR.get().resolve(ModBookmarkManager.SHARED_FILE));
 
 		if (ModList.get().isLoaded("cloth_config")) {
 			container.registerExtensionPoint(IConfigScreenFactory.class,
 					(modContainer, parent) -> MoreBookmarksConfigScreen.create(parent));
+		}
+		if (ModList.get().isLoaded("jei")) {
+			dev.morebookmarks.jei.JeiClientHooks.register();
+		}
+		if (ModList.get().isLoaded("roughlyenoughitems")) {
+			dev.morebookmarks.rei.ReiClientHooks.register();
 		}
 	}
 }

@@ -37,9 +37,30 @@ public final class ModBookmarkManager {
 	private ModBookmarkManager() {
 	}
 
+	public static final String SHARED_FILE = "morebookmarks-searches.json";
+	public static final String LEGACY_EMI_FILE = "emi-mod-bookmarks.json";
+
 	public static void init(Path file) {
 		configFile = Objects.requireNonNull(file, "configFile");
 		load();
+	}
+
+	/**
+	 * Load the shared search list used by EMI, JEI, and REI.
+	 * Migrates {@code emi-mod-bookmarks.json} once if the shared file is missing.
+	 */
+	public static void initShared(Path configDir) {
+		Path shared = configDir.resolve(SHARED_FILE);
+		Path legacy = configDir.resolve(LEGACY_EMI_FILE);
+		if (!Files.isRegularFile(shared) && Files.isRegularFile(legacy)) {
+			configFile = legacy;
+			load();
+			configFile = shared;
+			save();
+			MoreBookmarksClient.LOGGER.info("Migrated search bookmarks from {} to {}", legacy.getFileName(), shared.getFileName());
+			return;
+		}
+		init(shared);
 	}
 
 	public static List<String> getBookmarks() {

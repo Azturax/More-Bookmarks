@@ -12,7 +12,7 @@ import net.fabricmc.loader.api.FabricLoader;
 
 /**
  * Client entrypoint. Loads options and persisted search bookmarks at startup.
- * All in-game UI is driven by EMI mixins + {@link dev.morebookmarks.emi.ModBookmarkOverlay}.
+ * Viewer UI is attached only when EMI, JEI, and/or REI is present.
  */
 public class MoreBookmarksClient implements ClientModInitializer {
 	public static final String MOD_ID = "morebookmarks";
@@ -21,11 +21,18 @@ public class MoreBookmarksClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		MoreBookmarksConfig.init();
-		ModBookmarkManager.init(getBookmarkFile());
+		ModBookmarkManager.initShared(FabricLoader.getInstance().getConfigDir());
 		LOGGER.info("Loaded {} search bookmark(s) from {}", ModBookmarkManager.getBookmarks().size(), getBookmarkFile());
+
+		if (FabricLoader.getInstance().isModLoaded("jei")) {
+			dev.morebookmarks.jei.JeiClientHooks.register();
+		}
+		if (FabricLoader.getInstance().isModLoaded("roughlyenoughitems")) {
+			dev.morebookmarks.rei.ReiClientHooks.register();
+		}
 	}
 
 	public static Path getBookmarkFile() {
-		return FabricLoader.getInstance().getConfigDir().resolve("emi-mod-bookmarks.json");
+		return FabricLoader.getInstance().getConfigDir().resolve(ModBookmarkManager.SHARED_FILE);
 	}
 }
