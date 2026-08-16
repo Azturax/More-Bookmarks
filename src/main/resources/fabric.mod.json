@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "morebookmarks",
+	"version": "${version}",
+	"name": "More Bookmarks",
+	"description": "Save any EMI search as a bookmark. Click one to filter the item index instantly.",
+	"authors": [
+		"More Bookmarks"
+	],
+	"contact": {
+		"sources": "https://github.com/aztur/More-Bookmarks"
+	},
+	"license": "MIT",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.morebookmarks.MoreBookmarksClient"
+		],
+		"emi": [
+			"dev.morebookmarks.emi.MoreBookmarksEmiPlugin"
+		],
+		"modmenu": [
+			"dev.morebookmarks.config.MoreBookmarksModMenu"
+		]
+	},
+	"mixins": [
+		"morebookmarks.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.0",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*",
+		"emi": ">=1.1.18"
+	},
+	"recommends": {
+		"modmenu": "*",
+		"cloth-config": "*"
+	}
+}
