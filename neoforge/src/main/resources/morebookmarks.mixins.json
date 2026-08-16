@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "dev.morebookmarks.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"refmap": "morebookmarks.refmap.json",
+	"client": [
+		"EmiScreenBaseInvoker",
+		"EmiScreenBaseMixin",
+		"EmiScreenManagerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

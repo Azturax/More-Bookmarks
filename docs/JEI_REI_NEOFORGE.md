@@ -135,8 +135,13 @@ syntax, so applying the bookmarked string is enough.
 
 ## NeoForge port of this EMI addon
 
-EMI’s own classes (`dev.emi.emi.*`) are **not remapped**. The Fabric mixins in
-`EmiScreenManagerMixin` can be reused as-is.
+**Implemented** in `neoforge/` (ModDevGradle + official Mojmap). Build with
+`gradlew.bat -p neoforge build`. The playable jar is
+`neoforge/build/libs/more-bookmarks-neoforge-1.0.0.jar`.
+
+EMI’s own classes (`dev.emi.emi.*`) are **not remapped**. Mixin targets on
+`EmiScreenManager` are the same; Minecraft type names in those mixins use
+Mojmap (`Screen`, `GuiGraphics`, `AbstractContainerScreen`).
 
 Changes:
 

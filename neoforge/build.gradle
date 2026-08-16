@@ -1,0 +1,99 @@
+plugins {
+	id "java-library"
+	id "maven-publish"
+	id "net.neoforged.moddev" version "2.0.144"
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+	archivesName = "more-bookmarks-neoforge"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+repositories {
+	maven {
+		name = "TerraformersMC"
+		url = "https://maven.terraformersmc.com/"
+	}
+	maven {
+		name = "Shedaniel"
+		url = "https://maven.shedaniel.me/"
+	}
+}
+
+neoForge {
+	version = project.neo_version
+
+	runs {
+		client {
+			client()
+			systemProperty "neoforge.enabledGameTestNamespaces", project.mod_id
+		}
+
+		configureEach {
+			systemProperty "forge.logging.markers", "REGISTRIES"
+			logLevel = org.slf4j.event.Level.INFO
+		}
+	}
+
+	mods {
+		"${mod_id}" {
+			sourceSet(sourceSets.main)
+		}
+	}
+}
+
+configurations {
+	runtimeClasspath.extendsFrom localRuntime
+}
+
+dependencies {
+	// Full EMI jar: mixins target internals (EmiScreenManager), not just the API classifier.
+	implementation "dev.emi:emi-neoforge:${emi_version}"
+	implementation "me.shedaniel.cloth:cloth-config-neoforge:${cloth_config_version}"
+}
+
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+	var replaceProperties = [
+		minecraft_version      : minecraft_version,
+		minecraft_version_range: minecraft_version_range,
+		neo_version            : neo_version,
+		loader_version_range   : loader_version_range,
+		mod_id                 : mod_id,
+		mod_name               : mod_name,
+		mod_license            : mod_license,
+		mod_version            : mod_version,
+		mod_authors            : mod_authors,
+		mod_description        : mod_description,
+		emi_version            : emi_version
+	]
+	inputs.properties replaceProperties
+	expand replaceProperties
+	from "src/main/templates"
+	into "build/generated/sources/modMetadata"
+}
+
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = 21
+	options.encoding = "UTF-8"
+}
+
+jar {
+	from("../LICENSE") {
+		rename { "${it}_${project.base.archivesName.get()}" }
+	}
+}
+
+publishing {
+	publications {
+		register("mavenJava", MavenPublication) {
+			from components.java
+		}
+	}
+}
